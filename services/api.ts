@@ -24,7 +24,9 @@ export const checkHealth = async (): Promise<boolean> => {
 };
 
 export const predictFraud = async (data: PredictionRequest): Promise<PredictionResponse> => {
+  console.log("%c[Frontend] Sending REAL request to backend", "color: blue; font-weight: bold;");
   const response = await api.post<PredictionResponse>('/predict', data);
+  console.log("%c[Frontend] Received REAL IBM result:", "color: green; font-weight: bold;", response.data);
   return response.data;
 };
 

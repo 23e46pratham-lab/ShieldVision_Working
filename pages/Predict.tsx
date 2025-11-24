@@ -42,6 +42,8 @@ const Predict: React.FC = () => {
       navigate('/result', { state: { result, requestData: formData } });
     } catch (error) {
       console.error("Prediction failed", error);
+      console.warn("%c[Frontend] Backend FAILED → Using MOCK result", "color: red; font-weight: bold;", error);
+
       // For demo purposes, if backend fails, generate a mock result based on simple logic
       const mockResult = {
         isFraud: formData.amount > 50000 || (formData.oldbalanceOrg - formData.newbalanceOrig !== formData.amount),
