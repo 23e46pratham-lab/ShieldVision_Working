@@ -185,7 +185,7 @@ const Home: React.FC = () => {
       {/* Model Info */}
       <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">
         <h2 className="text-lg font-semibold text-center text-slate-900">
-          Model Info: Random Forest Classifier v2.1
+          Model Info:Snap Random Forest Classifier v2.1
         </h2>
       </div>
 
