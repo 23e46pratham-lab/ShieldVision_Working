@@ -1,65 +1,96 @@
 import axios from 'axios';
 import { PredictionRequest, PredictionResponse, TransactionLog, DashboardStats } from '../types';
 
-// Use environment variable or fallback to localhost for development
-// Casting import.meta to any to resolve TypeScript error regarding missing 'env' property
-const BASE_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:3000/api';
+// Backend URL (supports Render + local)
+const BASE_URL = (import.meta as any).env?.VITE_BACKEND_URL || 'http://localhost:5000';
 
 const api = axios.create({
   baseURL: BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 10000,
+  headers: { 'Content-Type': 'application/json' },
+  timeout: 15000,
 });
 
+// -----------------------------
+// HEALTH CHECK
+// -----------------------------
 export const checkHealth = async (): Promise<boolean> => {
+  console.log("%c[Frontend] Checking backend health...", "color: #ffaa00");
   try {
-    const response = await api.get('/health');
-    return response.status === 200;
-  } catch (error) {
-    console.error("Health check failed", error);
+    const res = await api.get('/health');
+    console.log("%c[Frontend] Backend health OK", "color: #22cc22");
+    return res.status === 200;
+  } catch (err) {
+    console.error("[Frontend] Backend health FAILED", err);
     return false;
   }
 };
 
+// -----------------------------
+// PREDICT FRAUD (REAL IBM ONLY)
+// -----------------------------
 export const predictFraud = async (data: PredictionRequest): Promise<PredictionResponse> => {
-  console.log("%c[Frontend] Sending REAL request to backend", "color: blue; font-weight: bold;");
-  const response = await api.post<PredictionResponse>('/predict', data);
-  console.log("%c[Frontend] Received REAL IBM result:", "color: green; font-weight: bold;", response.data);
-  return response.data;
+  console.log("%c[Frontend] Sending REAL request → /predict", "color: dodgerblue; font-weight: bold;", data);
+
+  try {
+    const response = await api.post<PredictionResponse>('/predict', data);
+    console.log("%c[Frontend] REAL IBM Response Received:", "color: green; font-weight: bold;", response.data);
+    return response.data;
+  } catch (err: any) {
+    console.error("%c[ERROR] Backend prediction FAILED:", "color: red; font-weight: bold;", err);
+
+    throw new Error("Failed to fetch prediction from backend");
+  }
 };
 
+// -----------------------------
+// CSV UPLOAD (REAL BACKEND)
+// -----------------------------
 export const uploadCSV = async (file: File): Promise<any> => {
+  console.log("%c[Frontend] Uploading CSV to backend...", "color: purple");
+
   const formData = new FormData();
   formData.append('file', file);
-  
-  const response = await api.post('/upload-csv', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  return response.data;
+
+  try {
+    const res = await api.post('/upload-csv', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+
+    console.log("%c[Frontend] CSV Upload Result:", "color: green;", res.data);
+    return res.data;
+
+  } catch (err) {
+    console.error("%c[ERROR] CSV Upload FAILED", "color: red", err);
+    throw new Error("Failed to upload CSV");
+  }
 };
 
+// -----------------------------
+// LOGS (Backend only — no mocks)
+// -----------------------------
 export const getLogs = async (): Promise<TransactionLog[]> => {
-  const response = await api.get<TransactionLog[]>('/logs');
+  console.log("%c[Frontend] Fetching logs...", "color: cyan");
+  try {
+    const res = await api.get('/logs');
+    return res.data;
+  } catch (err) {
+    console.error("[ERROR] Failed to fetch logs", err);
+    throw new Error("Failed to fetch logs");
+  }
+};
+
+export const getStats = async (): Promise<{
+  totalRowsProcessed: number;
+  fraudCount: number;
+  lastUpload: string | null;
+}> => {
+  console.log("%c[API] Fetching /stats", "color: purple; font-weight: bold;");
+
+  const response = await api.get('/stats');
+  console.log("%c[API] /stats response:", "color: green; font-weight: bold;", response.data);
+
   return response.data;
 };
 
-// Mock data service for frontend demo purposes if backend is offline
-// You can remove this in production
-export const getMockStats = (): DashboardStats => ({
-  totalTransactions: 1500,
-  fraudDetected: 35,
-  detectionAccuracy: 85,
-});
-
-export const getMockLogs = (): TransactionLog[] => [
-  { id: '123456', date: '2024-04-10', amount: 10000, merchant: 'CASH_OUT', status: 'Fraud', reason: 'Unusual balance change' },
-  { id: '123457', date: '2024-04-09', amount: 3500, merchant: 'PAYMENT', status: 'Legitimate', reason: 'High amount' },
-  { id: '123458', date: '2024-04-08', amount: 1200, merchant: 'DEBIT', status: 'Legitimate', reason: 'High amount' },
-  { id: '123459', date: '2024-04-07', amount: 45000, merchant: 'TRANSFER', status: 'Fraud', reason: 'Large transaction' },
-];
 
 export default api;
