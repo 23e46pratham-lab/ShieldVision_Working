@@ -108,7 +108,7 @@ const Home: React.FC = () => {
           colorClass="text-red-500"
         />
         <StatsCard 
-          label="Detection Accuracy"
+          label="Fraud Percentage"
           value={`${stats?.detectionAccuracy}%`}
           icon={PieChartIcon}
           colorClass="text-green-500"
